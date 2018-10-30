@@ -225,6 +225,8 @@ int read_options(const std::string &name, Options & options, bool suppress_print
   options.add("CUBEPROP_BASIS_FUNCTIONS", new ArrayType());
   /* Fraction of density captured by adaptive isocontour values */
   options.add_double("CUBEPROP_ISOCONTOUR_THRESHOLD",0.85);
+  /*- cube averaging divider. !expert -*/
+  options.add_int("CUBEPROP_DIVIDER",1);
   /*- CubicScalarGrid basis cutoff. !expert -*/
   options.add_double("CUBIC_BASIS_TOLERANCE", 1.0E-12);
   /*- CubicScalarGrid maximum number of grid points per evaluation block. !expert -*/

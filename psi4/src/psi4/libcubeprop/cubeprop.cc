@@ -108,15 +108,15 @@ void CubeProperties::raw_compute_properties() {
 
         if (task == "DENSITY") {
             std::shared_ptr<Matrix> Dt(Da_->clone());
-            std::shared_ptr<Matrix> Ds(Da_->clone());
+//            std::shared_ptr<Matrix> Ds(Da_->clone());
             Dt->copy(Da_);
-            Ds->copy(Da_);
+//            Ds->copy(Da_);
             Dt->add(Db_);
-            Ds->subtract(Db_);
-            compute_density(Dt, "Dt");
-            compute_density(Ds, "Ds");
-            compute_density(Da_, "Da");
-            compute_density(Db_, "Db");
+//            Ds->subtract(Db_);
+            compute_density(Dt, "Dt", options_["CUBEPROP_DIVIDER"].to_integer());
+//            compute_density(Ds, "Ds", options_["CUBEPROP_DIVIDER"].to_integer());
+//            compute_density(Da_, "Da", options_["CUBEPROP_DIVIDER"].to_integer());
+//            compute_density(Db_, "Db", options_["CUBEPROP_DIVIDER"].to_integer());
         } else if (task == "ESP") {
             std::shared_ptr<Matrix> Dt(Da_->clone());
             Dt->copy(Da_);
@@ -234,11 +234,11 @@ void CubeProperties::raw_compute_properties() {
         }
     }
 }
-void CubeProperties::compute_density(std::shared_ptr<Matrix> D, const std::string& key) {
-    grid_->compute_density(D, key);
+void CubeProperties::compute_density(std::shared_ptr<Matrix> D, const std::string& key, const int& div) {
+    grid_->compute_density(D, key, div);
 }
 void CubeProperties::compute_esp(std::shared_ptr<Matrix> Dt, const std::vector<double>& w) {
-    grid_->compute_density(Dt, "Dt");
+    grid_->compute_density(Dt, "Dt", 1);
     grid_->compute_esp(Dt, w, "ESP");
 }
 void CubeProperties::compute_orbitals(std::shared_ptr<Matrix> C, const std::vector<int>& indices,

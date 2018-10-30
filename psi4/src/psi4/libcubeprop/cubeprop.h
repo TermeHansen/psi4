@@ -97,7 +97,7 @@ class PSI_API CubeProperties {
     /// Obligatory title info
     void print_header();
     /// Compute a density grid task (key.cube)
-    void compute_density(std::shared_ptr<Matrix> D, const std::string& key);
+    void compute_density(std::shared_ptr<Matrix> D, const std::string& key, const int& div);
     /// Compute an ESP grid task (Dt.cube and ESP.cube)
     void compute_esp(std::shared_ptr<Matrix> Dt, const std::vector<double>& nuc_weights = std::vector<double>());
     /// Compute an orbital task (key_N.cube, for 0-based indices of C)
