@@ -188,6 +188,10 @@ PCM::PCM(const std::string &pcmsolver_parsed_fname, int print_level, std::shared
     pcmsolver_set_surface_function(context_.get(), ntess_, MEP_n_->pointer(0), MEP_n_label.c_str());
     int irrep = 0;
     pcmsolver_compute_asc(context_.get(), MEP_n_label.c_str(), ASC_n_label.c_str(), irrep);
+    auto tess_charges_n = std::make_shared<Vector>(tesspi_);
+    pcmsolver_get_surface_function(context_.get(), ntess_, tess_charges_n->pointer(0), ASC_n_label.c_str());
+    pcmsolver_save_surface_functions(context_.get()); // HFlabs
+
 
     if (pcm_print_ > 2) {
         auto tess_charges_n = std::make_shared<Vector>(tesspi_);
@@ -273,6 +277,11 @@ double PCM::compute_E_total(const SharedVector &MEP_e) const {
     int irrep = 0;
     pcmsolver_compute_asc(context_.get(), MEP_label.c_str(), ASC_label.c_str(), irrep);
 
+    auto ASC = std::make_shared<Vector>(tesspi_);
+    pcmsolver_get_surface_function(context_.get(), ntess_, ASC->pointer(0), ASC_label.c_str());
+    pcmsolver_save_surface_functions(context_.get()); // HFlabs
+
+
     if (pcm_print_ > 2) {
         auto ASC = std::make_shared<Vector>(tesspi_);
         pcmsolver_get_surface_function(context_.get(), ntess_, ASC->pointer(0), ASC_label.c_str());
@@ -302,6 +311,11 @@ double PCM::compute_E_separate(const SharedVector &MEP_e) const {
     int irrep = 0;
     pcmsolver_compute_asc(context_.get(), MEP_e_label.c_str(), ASC_e_label.c_str(), irrep);
 
+    auto ASC_n = std::make_shared<Vector>(tesspi_);
+    pcmsolver_get_surface_function(context_.get(), ntess_, ASC_n->pointer(0), ASC_n_label.c_str());
+    pcmsolver_save_surface_functions(context_.get()); // HFlabs
+
+
     if (pcm_print_ > 2) {
         auto ASC_n = std::make_shared<Vector>(tesspi_);
         pcmsolver_get_surface_function(context_.get(), ntess_, ASC_n->pointer(0), ASC_n_label.c_str());
@@ -319,6 +333,11 @@ double PCM::compute_E_separate(const SharedVector &MEP_e) const {
     MEP_e->add(MEP_n_);
     pcmsolver_set_surface_function(context_.get(), ntess_, MEP_e->pointer(0), MEP_label.c_str());
     pcmsolver_compute_asc(context_.get(), MEP_label.c_str(), ASC_label.c_str(), irrep);
+
+    auto ASC_e = std::make_shared<Vector>(tesspi_);
+    pcmsolver_get_surface_function(context_.get(), ntess_, ASC_e->pointer(0), ASC_e_label.c_str());
+    pcmsolver_save_surface_functions(context_.get()); // HFlabs
+
 
     // Grab the polarization energy from PCMSolver
     double U_NN = pcmsolver_compute_polarization_energy(context_.get(), MEP_n_label.c_str(), ASC_n_label.c_str());
@@ -341,6 +360,10 @@ double PCM::compute_E_electronic(const SharedVector &MEP_e) const {
     pcmsolver_set_surface_function(context_.get(), ntess_, MEP_e->pointer(0), MEP_e_label.c_str());
     int irrep = 0;
     pcmsolver_compute_asc(context_.get(), MEP_e_label.c_str(), ASC_e_label.c_str(), irrep);
+
+    auto ASC_e = std::make_shared<Vector>(tesspi_);
+    pcmsolver_get_surface_function(context_.get(), ntess_, ASC_e->pointer(0), ASC_e_label.c_str());
+    pcmsolver_save_surface_functions(context_.get()); // HFlabs
 
     if (pcm_print_ > 2) {
         auto ASC_e = std::make_shared<Vector>(tesspi_);
