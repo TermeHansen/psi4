@@ -37,6 +37,7 @@
 #include "psi4/libmints/molecule.h"
 #include "psi4/libmints/basisset.h"
 #include "psi4/libmints/vector.h"
+#include "psi4/libmints/vector3.h"
 #include "psi4/libmints/integral.h"
 #include "psi4/libmints/potential.h"
 #include "psi4/libfilesystem/path.h"
@@ -205,6 +206,37 @@ void CubicScalarGrid::populate_grid() {
     points_ = std::make_shared<RKSFunctions>(primary_, max_points, max_functions);
     points_->set_ansatz(0);
 }
+
+std::shared_ptr<BlockOPoints> CubicScalarGrid::block_average(const std::vector<double> &O, std::vector<double>& xyz) {
+	int npts = xyz.size()/3;
+	int d = pow(npts, 1/3.0);
+
+	double start[3];
+    for (int i = 0; i < 3; i++) start[i] = O[i] - D_[i]/2.0;
+
+	double* xp = &xyz[0]; 
+	double* yp = &xyz[1*npts]; 
+	double* zp = &xyz[2*npts]; 
+
+	std::vector<double> wp_(npts,  D_[0] * D_[1] * D_[2]);
+	double* wp = &wp_[0]; 
+
+
+    size_t offset = 0L;
+    for (int i = 0; i < d; i++) {
+        for (int j = 0; j < d; j++) {
+            for (int k = 0; k < d; k++) {
+                xp[offset] = start[0] + i * D_[0]/(d-1);
+                yp[offset] = start[1] + j * D_[1]/(d-1);
+                zp[offset] = start[2] + k * D_[2]/(d-1);
+                offset++;
+            }
+        }
+    }
+//    auto local_block = std::make_shared<BlockOPoints>(offset, xp, yp, zp, wp, extents_);
+	return std::make_shared<BlockOPoints>(offset, xp, yp, zp, wp, extents_);
+}
+
 void CubicScalarGrid::print_header() {
     outfile->Printf("  ==> CubicScalarGrid <==\n\n");
 
@@ -286,8 +318,8 @@ void CubicScalarGrid::write_cube_file(double* v, const std::string& name, const 
 
     // Atoms of molecule (Z, Q?, x, y, z)
     for (int A = 0; A < mol_->natom(); A++) {
-        fprintf(fh, "%3d %10.6f %10.6f %10.6f %10.6f\n", (int)mol_->Z(A), 0.0, mol_->x(A), mol_->y(A), mol_->z(A));
-    }
+//        fprintf(fh, "%3d %10.6f %10.6f %10.6f %10.6f\n", (int)mol_->Z(A), 0.0, mol_->x(A), mol_->y(A), mol_->z(A));
+        fprintf(fh, "%3d %10.6f %10.6f %10.6f %10.6f\n", (int)mol_->true_atomic_number(A), 0.0, mol_->x(A), mol_->y(A), mol_->z(A));     }
 
     // Data, striped (x, y, z)
     for (size_t ind = 0; ind < npoints_; ind++) {
@@ -297,19 +329,74 @@ void CubicScalarGrid::write_cube_file(double* v, const std::string& name, const 
 
     fclose(fh);
 }
-void CubicScalarGrid::add_density(double* v, std::shared_ptr<Matrix> D) {
+
+bool coord_present_in_core(Matrix &geom, Vector3 &b, double tol) {
+    for (int i = 0; i < geom.nrow(); ++i) {
+        Vector3 a(geom(i, 0), geom(i, 1), geom(i, 2));
+        if (b.distance(a) < tol) return true;
+    }
+    return false;
+}
+
+void CubicScalarGrid::add_density(double* v, std::shared_ptr<Matrix> D, const int d, const double dr, const int datnr) {
     points_->set_pointers(D);
     std::shared_ptr<Vector> rho = points_->point_value("RHO_A");
     double* rhop = rho->pointer();
 
+    int npts = pow(d, 3.0);
+	std::vector<double> local_coords(3*npts);
+	std::vector<double> O(3);
+
     size_t offset = 0L;
+
+    auto molgeom = mol_->geometry();
+
+	std::vector<int> rowidx;
+    for (int A = 0; A < mol_->natom(); A++) {
+		if ((int)mol_->true_atomic_number(A) > datnr ) {
+			rowidx.push_back(A);
+		}
+	}
+	Matrix mygeom(rowidx.size(),3);
+    for (int r = 0; r < rowidx.size(); r++) {
+		mygeom.set(r,0,molgeom(rowidx[r],0));
+		mygeom.set(r,1,molgeom(rowidx[r],1));
+		mygeom.set(r,2,molgeom(rowidx[r],2));
+	}
+
     for (int ind = 0; ind < blocks_.size(); ind++) {
-        points_->compute_points(blocks_[ind]);
         size_t npoints = blocks_[ind]->npoints();
-        C_DAXPY(npoints, 0.5, rhop, 1, &v[offset], 1);
-        offset += npoints;
+		std::vector<double> localv(npoints);
+
+	    points_->compute_points(blocks_[ind]);
+
+		for (size_t p = 0; p < npoints; p++) {
+			localv[p] =  0.5*rhop[p];
+		}
+        
+		auto xp = blocks_[ind]->x();
+		auto yp = blocks_[ind]->y();
+		auto zp = blocks_[ind]->z();
+		for (size_t p = 0; p < npoints; p++) {
+			O = {xp[p],yp[p],zp[p]};
+			Vector3 a(xp[p],yp[p],zp[p]);
+
+			if ( d!=1 and coord_present_in_core(mygeom, a, dr) ) {
+				auto local_block = block_average(O, local_coords);
+				points_->compute_points(local_block);
+				v[offset] =  0.5*C_DASUM(npts, rhop,1)/npts;
+			}
+			else {
+				v[offset] =  localv[p];
+			}
+		    offset++;
+		}
     }
+
 }
+
+
+
 void CubicScalarGrid::add_esp(double* v, std::shared_ptr<Matrix> D, const std::vector<double>& nuc_weights) {
     // => Auxiliary Basis Set <= //
 
@@ -589,13 +676,20 @@ void CubicScalarGrid::add_ELF(double* v, std::shared_ptr<Matrix> D) {
 
     points_->set_ansatz(0);
 }
-void CubicScalarGrid::compute_density(std::shared_ptr<Matrix> D, const std::string& name, const std::string& type) {
+void CubicScalarGrid::compute_density(std::shared_ptr<Matrix> D, const std::string& name, const int& cube_divider, const double& cube_divider_radius, const int& cube_divider_element, const std::string& type) {
+
     double* v = new double[npoints_];
     memset(v, '\0', npoints_ * sizeof(double));
-    add_density(v, D);
+    add_density(v, D, cube_divider, cube_divider_radius, cube_divider_element);
+
     // Get adaptive isocountour range
     std::pair<double, double> isocontour_range = compute_isocontour_range(v, 1.0);
     double density_percent = 100.0 * options_.get_double("CUBEPROP_ISOCONTOUR_THRESHOLD");
+	double sum_of_elecs = 0;
+	for (size_t ind = 0; ind < npoints_; ind++) {sum_of_elecs +=v[ind];}
+	double total_elecs = sum_of_elecs*D_[0]*D_[1]*D_[2];
+	std::cout << "Number of electrons: " << total_elecs;
+
     std::stringstream comment;
     comment << " [e/a0^3]. Isocontour range for " << density_percent << "% of the density: (" << isocontour_range.first
             << "," << isocontour_range.second << ")";
@@ -695,4 +789,4 @@ std::pair<double, double> CubicScalarGrid::compute_isocontour_range(double* v2, 
     }
     return std::make_pair(positive_isocontour, negative_isocontour);
 }
-}
+}  // namespace psi

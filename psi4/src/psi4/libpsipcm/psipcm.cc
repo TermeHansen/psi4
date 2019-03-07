@@ -38,7 +38,6 @@
 #include <PCMSolver/PCMInput.h>
 
 
-
 namespace psi {
 
 void collect_atoms(std::shared_ptr<Molecule> molecule, double charges[], double centers[])
@@ -197,6 +196,8 @@ PCM::PCM(Options &options, std::shared_ptr<PSIO> /* psio */, int nirrep, std::sh
   int irrep = 0;
   pcmsolver_compute_asc(context_, potential_name, charge_name, irrep);
   pcmsolver_get_surface_function(context_, ntess_, tess_charges_n_, charge_name);
+//  pcmsolver_save_surface_function(context_, charge_name); // HFlabs
+  pcmsolver_save_surface_functions(context_); // HFlabs
 
   // A little debug info
   if(pcm_print_ > 2) {
@@ -271,7 +272,9 @@ double PCM::compute_E_total(SharedMatrix &D)
   int irrep = 0;
   pcmsolver_compute_asc(context_, tot_potential_name, tot_charge_name, irrep);
   pcmsolver_get_surface_function(context_, ntess_, tess_charges_, tot_charge_name);
-
+//  pcmsolver_save_surface_function(context_, tot_charge_name); // HFlabs
+  pcmsolver_save_surface_functions(context_); // HFlabs
+	
   if(pcm_print_ > 2) {
     outfile->Printf("Total MEP & ASC at each tessera:\n");
     outfile->Printf("-------------------------------------------------\n");
@@ -280,7 +283,6 @@ double PCM::compute_E_total(SharedMatrix &D)
     for(int tess = 0; tess < ntess_; ++tess)
         outfile->Printf("%4d  %16.10f  %16.10f\n", tess, tess_pot_[tess], tess_charges_[tess]);
   }
-
   // Grab the polarization energy from PCMSolver
   double Epol = pcmsolver_compute_polarization_energy(context_, tot_potential_name, tot_charge_name);
   outfile->Printf("   PCM polarization energy = %16.14f\n", Epol);
@@ -323,7 +325,8 @@ double PCM::compute_E_separate(SharedMatrix &D)
   int irrep = 0;
   pcmsolver_compute_asc(context_, e_potential_name, e_charge_name, irrep);
   pcmsolver_get_surface_function(context_, ntess_, tess_charges_e_, e_charge_name);
-
+//  pcmsolver_save_surface_function(context_, e_charge_name); // HFlabs
+  pcmsolver_save_surface_functions(context_); // HFlabs
   // Combine the nuclear and electronic potentials at each tessera
   for(int tess = 0; tess < ntess_; ++tess) tess_pot_[tess] = tess_pot_n_[tess] + tess_pot_e_[tess];
 
@@ -341,6 +344,8 @@ double PCM::compute_E_separate(SharedMatrix &D)
   pcmsolver_set_surface_function(context_, ntess_, tess_pot_, tot_potential_name);
   pcmsolver_compute_asc(context_, tot_potential_name, tot_charge_name, irrep);
   pcmsolver_get_surface_function(context_, ntess_, tess_charges_, tot_charge_name);
+//  pcmsolver_save_surface_function(context_, tot_charge_name); // HFlabs
+  pcmsolver_save_surface_functions(context_); // HFlabs
 
   // Grab the polarization energy from PCMSolver
   const char * n_potential_name = "NucMEP";
@@ -392,8 +397,8 @@ double PCM::compute_E_electronic(SharedMatrix &D)
   pcmsolver_set_surface_function(context_, ntess_, tess_pot_e_, e_potential_name);
   int irrep = 0;
   pcmsolver_compute_asc(context_, e_potential_name, e_charge_name, irrep);
-  pcmsolver_get_surface_function(context_, ntess_, tess_charges_e_, e_charge_name);
-
+//  pcmsolver_get_surface_function(context_, ntess_, tess_charges_e_, e_charge_name);
+  pcmsolver_save_surface_functions(context_); // HFlabs
   if(pcm_print_ > 2) {
     outfile->Printf("Electronic MEP & ASC at each tessera:\n");
     outfile->Printf("-------------------------------------------------\n");

@@ -639,6 +639,7 @@ public:
     /// true if it is, and returns false if not.
     bool is_variable(const std::string& str) const;
 
+
     /// Sets the molecular charge
     void set_molecular_charge(int charge) {
         charge_specified_ = true;
