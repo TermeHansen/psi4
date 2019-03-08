@@ -241,6 +241,10 @@ int read_options(const std::string &name, Options &options, bool suppress_printi
     options.add("CUBIC_GRID_OVERAGE", new ArrayType());
     /*- CubicScalarGrid grid spacing in bohr [D_X, D_Y, D_Z]. Defaults to 0.2 bohr each. -*/
     options.add("CUBIC_GRID_SPACING", new ArrayType());
+    /*- cube averaging divider. !expert -*/
+    options.add_int("CUBEPROP_DIVIDER",1);
+    options.add_int("CUBEPROP_DIVIDER_RADIUS",2.0);
+    options.add_int("CUBEPROP_DIVIDER_ELEMENT",0);
     /*- How many NOONS to print -- used in libscf_solver/uhf.cc and libmints/oeprop.cc -*/
     options.add_str("PRINT_NOONS", "3");
 
