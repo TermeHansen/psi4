@@ -110,6 +110,8 @@ class CubicScalarGrid {
     void build_grid(const std::string filepath, int* N, double* D, double* O);
     /// Build grid from the dimensions in another grid
     void build_grid(std::shared_ptr<CubicScalarGrid> other);
+	std::shared_ptr<BlockOPoints> block_average(const std::vector<double> &O, std::vector<double>& xyz);
+
     /// Header info
     void print_header();
 
@@ -158,7 +160,7 @@ class CubicScalarGrid {
     // => Low-Level Scalar Field Computation (Use only if you know what you are doing) <= //
 
     /// Add a density-type property to the scalar field
-    void add_density(double* v, std::shared_ptr<Matrix> D);
+    void add_density(double* v, std::shared_ptr<Matrix> D, const int d, const double dr, const int datnr);
     /// Add an ESP-type property to the scalar field (total density matrix, must set DF_BASIS_SCF option)
     void add_esp(double* v, std::shared_ptr<Matrix> D, const std::vector<double>& nuc_weights = std::vector<double>());
     /// Add a basis function property for desired indices to the scalar fields in v (rows are basis functions)
@@ -173,7 +175,7 @@ class CubicScalarGrid {
     // => High-Level Scalar Field Computation <= //
 
     /// Compute a density-type property and drop a file corresponding to name and type
-    void compute_density(std::shared_ptr<Matrix> D, const std::string& name, const std::string& type = "CUBE");
+    void compute_density(std::shared_ptr<Matrix> D, const std::string& name, const int& cube_divider = 1, const double& cube_divider_radius = 2.0, const int& cube_divider_element = 0, const std::string& type = "CUBE");
     /// Compute an ESP-type property and drop a file corresponding to name and type
     void compute_esp(std::shared_ptr<Matrix> D, const std::vector<double>& nuc_weights, const std::string& name,
                      const std::string& type = "CUBE");
