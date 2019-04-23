@@ -123,8 +123,7 @@ jobs:
                         pybind11 ^
                         pytest ^
                         python=%PYTHON_VERSION% ^
-                        qcelemental ^
-                        qcengine
+                        qcelemental
           conda list
         displayName: "Install conda packages"
 

@@ -411,7 +411,6 @@ core.VBase.get_np_xyzw = _core_vbase_get_np_xyzw
 
 def set_options(options_dict, verbose=1):
     """Sets Psi4 options from an input dictionary.
-
     Parameters
     ----------
     options_dict : dict
@@ -421,11 +420,9 @@ def set_options(options_dict, verbose=1):
         are case insensitive.
     verbose : int, optional
         Control print volume.
-
     Returns
     -------
     None
-
     """
     optionre = re.compile(r'\A(?P<module>\w+__)?(?P<option>\w+)\Z', re.IGNORECASE)
     rejected = {}
